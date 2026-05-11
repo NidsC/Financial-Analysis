@@ -11,7 +11,7 @@ Dividend Stock Comparison Tool is a Python-based financial analysis script that 
 user-defined list of tickers using the yfinance library. It retrieves key financial metrics — including dividends,
 income statements, balance sheets, and cash flow statements — and consolidates them into a clean comparison table. The
 tool calculates a range of fundamental ratios such as Payout Ratio, Return on Equity, Debt/EBITDA, Interest Coverage,
-Dividend Growth Rate, ROIC, and FCF Yield, giving investors a quick side-by-side view of dividend stock quality. The
+Dividend Growth Rate and FCF Yield, giving investors a quick side-by-side view of dividend stock quality. The
 script is intentionally flexible: any metric available through yfinance can be added or removed from the output table
 with minimal effort, making it a practical starting point for anyone building their own stock screening workflow.
 
