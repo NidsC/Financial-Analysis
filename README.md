@@ -30,30 +30,20 @@ ScoreDCS — Dividend Stock Scoring Tool
 
   How It Works
   Stocks are evaluated across three pillars, each contributing to a total score out of 30 (displayed as a percentage)
-  ┌────────────────────────┬────────────────────────────────────────────────────────────────┐
-  │         Pillar         │                        Metrics Analysed                        │
-  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
-  │ 1. Dividend Quality    │ Free Cash Flow Yield, Payout Ratio, Dividend Growth Rate (DGR) │
-  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
-  │ 2. Financial Stability │ Debt/EBITDA Leverage Ratio, EBIT Interest Coverage             │
-  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
-  │ 3. Capital Efficiency  │ Return on Equity (ROE), Return on Invested Capital (ROIC)      │
-  └────────────────────────┴────────────────────────────────────────────────────────────────┘
+  There are 3 pillars accessed here:
+  1. Dividend Quality - Free Cash Flow Yield, Payout Ratio, Dividend Growth Rate (DGR)
+  2. Financial Stability - Debt/EBITDA Leverage Ratio, EBIT Interest Coverage
+     It simply looks at a company's ability to cover long term and short term payments
+  3. Capital Efficiency - Return on Equity (ROE), Return on Invested Capital (ROIC)
 
   Signal Thresholds
-  ┌────────┬───────────┐
-  │ Signal │ Raw Score │
-  ├────────┼───────────┤
-  │ BUY    │ ≥ 19 / 30 │
-  ├────────┼───────────┤
-  │ KEEP   │ ≥ 12 / 30 │
-  ├────────┼───────────┤
-  │ SELL   │ < 12 / 30 │
-  └────────┴───────────┘
+  BUY - ≥ 19 / 30
+  KEEP - ≥ 12 / 30
+  SELL - < 12 / 30
 
   Output Columns
-  Ticker · Price · Div% Yield · FCF Yield · Payout Ratio · DGR% · Score1 (Dividend Quality) · Leverage Ratio · Coverage ·
-  Score2 (Financial Stability) · ROE · ROIC · Score3 (Capital Efficiency) · Total Score (%) · Signal
+  Ticker, Price, Div% Yield, FCF Yield, Payout Ratio, DGR%, Score1 (Dividend Quality), Leverage Ratio, Coverage,
+  Score2 (Financial Stability), ROE, ROIC, Score3 (Capital Efficiency), Total Score (%), Signal
 
   Dependencies
   yfinance
@@ -65,9 +55,9 @@ ScoreDCS — Dividend Stock Scoring Tool
   Usage
   Clone the file and open the ScoreDCS in PyCharm or Spyder
   Edit the tickers list in the script to include your desired LSE stock tickers (e.g. "HSBA.L", "BP.L"), then run.
-
+  OR
   Run the following command in terminal.
   python ScoreDCS.py
   
-  ▎ Note: Data is pulled live from Yahoo Finance via yfinance. Missing or unavailable data for a metric defaults to a 
-  ▎ neutral mid-range score rather than failing the stock entirely.
+  Note: Data is pulled live from Yahoo Finance via yfinance. Missing or unavailable data for a metric defaults to a 
+  neutral mid-range score rather than failing the stock entirely.
