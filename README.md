@@ -23,3 +23,51 @@ data. A clean() helper function was introduced to safely extract rows from finan
 None instead of crashing when a row label is missing or unavailable for a given ticker. All arithmetic operations in the
 output table are now guarded against None values, and the main data loop wraps each ticker in a try/except block so
 that a single failed ticker is skipped with a warning rather than halting the entire run.
+
+ScoreDCS — Dividend Stock Scoring Tool
+  A Python script that scores and compares dividend stocks across the London Stock Exchange (LSE), generating BUY / KEEP /
+   SELL signals based on fundamental financial analysis.
+
+  How It Works
+  Stocks are evaluated across three pillars, each contributing to a total score out of 30 (displayed as a percentage)
+  ┌────────────────────────┬────────────────────────────────────────────────────────────────┐
+  │         Pillar         │                        Metrics Analysed                        │
+  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
+  │ 1. Dividend Quality    │ Free Cash Flow Yield, Payout Ratio, Dividend Growth Rate (DGR) │
+  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
+  │ 2. Financial Stability │ Debt/EBITDA Leverage Ratio, EBIT Interest Coverage             │
+  ├────────────────────────┼────────────────────────────────────────────────────────────────┤
+  │ 3. Capital Efficiency  │ Return on Equity (ROE), Return on Invested Capital (ROIC)      │
+  └────────────────────────┴────────────────────────────────────────────────────────────────┘
+
+  Signal Thresholds
+  ┌────────┬───────────┐
+  │ Signal │ Raw Score │
+  ├────────┼───────────┤
+  │ BUY    │ ≥ 19 / 30 │
+  ├────────┼───────────┤
+  │ KEEP   │ ≥ 12 / 30 │
+  ├────────┼───────────┤
+  │ SELL   │ < 12 / 30 │
+  └────────┴───────────┘
+
+  Output Columns
+  Ticker · Price · Div% Yield · FCF Yield · Payout Ratio · DGR% · Score1 (Dividend Quality) · Leverage Ratio · Coverage ·
+  Score2 (Financial Stability) · ROE · ROIC · Score3 (Capital Efficiency) · Total Score (%) · Signal
+
+  Dependencies
+  yfinance
+  pandas
+
+  Install with:
+  pip install yfinance pandas
+  
+  Usage
+  Clone the file and open the ScoreDCS in PyCharm or Spyder
+  Edit the tickers list in the script to include your desired LSE stock tickers (e.g. "HSBA.L", "BP.L"), then run.
+
+  Run the following command in terminal.
+  python ScoreDCS.py
+  
+  ▎ Note: Data is pulled live from Yahoo Finance via yfinance. Missing or unavailable data for a metric defaults to a 
+  ▎ neutral mid-range score rather than failing the stock entirely.
