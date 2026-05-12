@@ -64,4 +64,5 @@ ScoreDCS — Dividend Stock Scoring Tool
 
   What it should look like: 
   <img width="1240" height="819" alt="image" src="https://github.com/user-attachments/assets/39937ad8-934f-45d5-8f1f-cbbcc4b9dfb1" />
+  All the companies in the table has a market capitalisation higher than GBP 2 billion and have a dividend yield higher than 4%. 
 
