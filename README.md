@@ -61,3 +61,7 @@ ScoreDCS — Dividend Stock Scoring Tool
   
   Note: Data is pulled live from Yahoo Finance via yfinance. Missing or unavailable data for a metric defaults to a 
   neutral mid-range score rather than failing the stock entirely.
+
+  What it should look like: 
+  <img width="1240" height="819" alt="image" src="https://github.com/user-attachments/assets/39937ad8-934f-45d5-8f1f-cbbcc4b9dfb1" />
+
