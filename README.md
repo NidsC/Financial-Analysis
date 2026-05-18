@@ -66,3 +66,10 @@ ScoreDCS — Dividend Stock Scoring Tool
   <img width="1240" height="819" alt="image" src="https://github.com/user-attachments/assets/39937ad8-934f-45d5-8f1f-cbbcc4b9dfb1" />
   All the companies in the table has a market capitalisation higher than GBP 2 billion and have a dividend yield higher than 4%. 
 
+
+  Unilever 3 Statement Financial Model - Excel 
+  To download the excel file, click on the file link or click on file on repository main page which takes you to the Files viewing page. Click on 'View Raw' to download. 
+  Further details given inside the Excel file. 
+
+
+
