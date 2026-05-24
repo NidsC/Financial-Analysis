@@ -1,40 +1,9 @@
-# An application tool that scores the dividend stocks for comparison and provides a buy, keep or sell signal
-# There are 3 pillars to the socring system
-# 1) Dividend Quality which analyses the dividend yield and the growth rate of dividends
-# 2) Financial Stability which analyses the strength of a companys business model and its ability to cover debts and interest expenses
-# 3) Capital Efficiency which looks at the returns on equity and the returns on invested capital
 
-# This python script will do both, the calculation for the relevant metrics prints a score for each pillar.
 
-# Import the pandas, yfinance and numpy as we will use them
-import yfinance as yf
 import pandas as pd
-# import numpy as np
-
-# adjust the sizing constraint for the dataframe table
-pd.set_option("display.max_columns", None)
-pd.set_option("display.width", None)
-pd.set_option("display.max_colwidth", None)
-
-# clean the data in case the yfinance data source returns invalid values
-def clean(df, row):
-    try:
-        return df.loc[row].iloc[0]
-    except (KeyError, IndexError):
-        return None
-
-# define your tickers, the process of making an interactive UI to add and remove stocks will come later. For now it will have to be done manually
-# tickers = ["BP.L", "IAG.L", "CNA.L", "NG.L", "ITM.L"]
-# tickers = ["BP.L", "IAG.L", "CNA.L", "NG.L", "ITM.L", "VOD.L", "ITV.L", "HLN.L", "BYIT.L", "BLND.L", "AV.L", "LGEN.L", "RWS.L", "NCC.L"]
-tickers = ["HSBA.L", "BATS.L", "ULVR.L", "BP.L", "NWG.L", "DGE.L", "RKT.L", "IMB.L", "AV.L", "LGEN.L", "ADM.L", "SGRO.L", "SDLF.L", "MNG.L", "SBRY.L", "ICG.L", "HBR.L", "INVP.L", "IGG.L", "KGF.L", "ITH.L", "LMP.L", "LAND.L", "BBOX.L", "ABDN.L", "N91.L", "WTB.L", "BLND.L", "BTRW.L", "PSN.L", "HIK.L", "EMG.L", "ITV.L", "WPP.L", "TW.L", "TBCG.L", "PNN.L", "UTG.L", "PHP.L", "INPP.L", "HICL.L", "TCAP.L", "UKW.L", "RAT.L"]
-
-def signal(Tscore):
-    if Tscore >= 19:
-        return "BUY"
-    elif Tscore >= 12:
-        return "KEEP"
-    else:
-        return "SELL"
+import yfinance as yf
+from utils import clean, signal
+from universe import tickers
 
 def get_data(ticker):
     stock = yf.Ticker(ticker)
@@ -206,16 +175,3 @@ def get_data(ticker):
             "Total Score": round((Tscore / 30) * 100, 2),
             "Signal": signal(Tscore),
             }
-
-data = []
-for t in tickers:
-    try:
-        data.append(get_data(t))
-    except Exception as e:
-        import traceback
-        print(f"Skipping {t}: {e}")
-        traceback.print_exc()
-
-df = pd.DataFrame(data)
-
-print(df)
