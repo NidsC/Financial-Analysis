@@ -1,3 +1,4 @@
+# ScoreDCS is now a modular file, connected with several other files. Read the README.md to better understand
 # Import the pandas, yfinance and numpy as we will use them
 import yfinance as yf
 import pandas as pd
