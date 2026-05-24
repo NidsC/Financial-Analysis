@@ -8,6 +8,7 @@ from universe import tickers
 from utils import clean, signal
 from calculator import get_data
 from dupontcalc import dupont
+from capm import capm
 
 # adjust the sizing constraint for the dataframe table
 pd.set_option("display.max_columns", None)
@@ -19,6 +20,7 @@ for t in tickers:
     try:
         row = get_data(t)
         row.update(dupont(t))
+        row.update(capm(t))
         data.append(row)
     except Exception as e:
         import traceback
