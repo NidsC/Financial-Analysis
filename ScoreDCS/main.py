@@ -9,6 +9,7 @@ from utils import clean, signal
 from calculator import get_data
 from dupontcalc import dupont
 from capm import capm
+from relative_valuation import relative_valuation
 
 # adjust the sizing constraint for the dataframe table
 pd.set_option("display.max_columns", None)
@@ -21,6 +22,7 @@ for t in tickers:
         row = get_data(t)
         row.update(dupont(t))
         row.update(capm(t))
+        row.update(relative_valuation(t))
         data.append(row)
     except Exception as e:
         import traceback
