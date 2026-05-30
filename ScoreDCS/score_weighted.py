@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "UKStocksLibrary", "data", "uk_equity_library.db")
+_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "uk_equity_library.db")
 
 # Minimum ScoreDCS Total Score (0-100) to be included in portfolio
 MIN_SCORE = 67.0
