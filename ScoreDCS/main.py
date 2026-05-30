@@ -1,6 +1,5 @@
 # ScoreDCS is now a modular file, connected with several other files. Read the README.md to better understand
 # Import the pandas, yfinance and numpy as we will use them
-import yfinance as yf
 import pandas as pd
 # import numpy as np
 
@@ -10,6 +9,7 @@ from calculator import get_data
 from dupontcalc import dupont
 from capm import capm
 from relative_valuation import relative_valuation
+from dcf import print_dcf
 
 # adjust the sizing constraint for the dataframe table
 pd.set_option("display.max_columns", None)
@@ -31,3 +31,9 @@ for t in tickers:
 
 df = pd.DataFrame(data)
 print(df)
+
+print("\n" + "=" * 55)
+print("  DCF VALUATIONS")
+print("=" * 55)
+for t in tickers:
+    print_dcf(t)
