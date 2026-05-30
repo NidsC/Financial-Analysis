@@ -10,6 +10,8 @@ from dupontcalc import dupont
 from capm import capm
 from relative_valuation import relative_valuation
 from dcf import print_dcf
+from score_weighted import score_weighted, print_score_weighted
+from markowitz import markowitz, print_markowitz
 
 # adjust the sizing constraint for the dataframe table
 pd.set_option("display.max_columns", None)
@@ -37,3 +39,20 @@ print("  DCF VALUATIONS")
 print("=" * 55)
 for t in tickers:
     print_dcf(t)
+
+# --- Portfolio Optimisation ---
+scored_tickers = [(row["Ticker"], row["Total Score"]) for row in data]
+
+print("\n" + "=" * 55)
+print("  PORTFOLIO OPTIMISATION — SCORE-WEIGHTED")
+print("=" * 55)
+sw_result = score_weighted(scored_tickers)
+print_score_weighted(sw_result)
+
+print("\n" + "=" * 55)
+print("  PORTFOLIO OPTIMISATION — MARKOWITZ MAX-SHARPE")
+print("=" * 55)
+eligible_tickers = [t for t, s in scored_tickers if s is not None and s >= 67.0]
+print(f"Running Markowitz on {len(eligible_tickers)} eligible stocks...")
+mz_result = markowitz(eligible_tickers)
+print_markowitz(mz_result)
