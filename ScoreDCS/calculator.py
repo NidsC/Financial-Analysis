@@ -1,35 +1,69 @@
+import sqlite3
+import os
+from utils import signal
+
+_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "uk_equity_library.db")
 
 
-import pandas as pd
-import yfinance as yf
-from utils import clean, signal
-from universe import tickers
+def _get_data_from_db(ticker):
+    conn = sqlite3.connect(_DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    # Most recent price
+    price_row = conn.execute("""
+        SELECT close FROM prices WHERE ticker = ? ORDER BY date DESC LIMIT 1
+    """, (ticker,)).fetchone()
+
+    # Most recent fundamentals
+    fund = conn.execute("""
+        SELECT pe_ratio, ev_ebitda, price_to_book, peg_ratio,
+               roe, roic, debt_to_equity, current_ratio,
+               dividend_yield, payout_ratio, fcf_yield
+        FROM fundamentals WHERE ticker = ? ORDER BY year DESC LIMIT 1
+    """, (ticker,)).fetchone()
+
+    # Two most recent years of financials for DGR
+    fin_rows = conn.execute("""
+        SELECT year, revenue, ebitda, ebit, net_income,
+               total_debt, total_equity, free_cash_flow
+        FROM financials WHERE ticker = ? ORDER BY year DESC LIMIT 2
+    """, (ticker,)).fetchall()
+
+    # Market cap from companies table
+    company = conn.execute(
+        "SELECT market_cap FROM companies WHERE ticker = ?", (ticker,)
+    ).fetchone()
+
+    conn.close()
+    return price_row, fund, fin_rows, company
+
 
 def get_data(ticker):
-    stock = yf.Ticker(ticker)
-    info = stock.info
-    financial = stock.financials
-    dividends = stock.dividends
-    balance_sheet = stock.balance_sheet
-    cashflow = stock.cashflow
+    price_row, fund, fin_rows, company = _get_data_from_db(ticker)
 
+    current_price = price_row["close"] if price_row else None
+    market_cap    = company["market_cap"] if company else None
 
-    fcf = clean(cashflow, "Free Cash Flow")
-    fcfyield = round(fcf / info.get("marketCap"), 2) if fcf and info.get("marketCap") else None
-    if fcfyield is None:
+    fin = fin_rows[0] if fin_rows else None
+    fin_prev = fin_rows[1] if len(fin_rows) > 1 else None
+
+    # --- FCF Yield ---
+    fcf_yield = fund["fcf_yield"] if fund else None
+    if fcf_yield is None:
         fcfpoint = 2
-    elif fcfyield >= 0.08:
+    elif fcf_yield >= 0.08:
         fcfpoint = 4
-    elif fcfyield >=0.05:
+    elif fcf_yield >= 0.05:
         fcfpoint = 3
-    elif fcfyield >= 0.02:
+    elif fcf_yield >= 0.02:
         fcfpoint = 2
-    elif fcfyield > 0:
+    elif fcf_yield > 0:
         fcfpoint = 1
-    elif fcfyield <= 0:
+    else:
         fcfpoint = 0
 
-    payout = info.get("payoutRatio")
+    # --- Payout Ratio ---
+    payout = fund["payout_ratio"] if fund else None
     if payout is None:
         paypoint = 2
     elif payout > 1:
@@ -44,43 +78,41 @@ def get_data(ticker):
         paypoint = 3
     elif payout > 0.1:
         paypoint = 2
-    elif payout <= 0.1:
+    else:
         paypoint = 1
 
-    annual_div = dividends.resample("YE").sum()
-    last_5 = annual_div.tail(6)
-    valid = last_5.dropna()
-    valid = valid[valid > 0]
-    if len(valid) >= 2:
-        yoy_changes = valid.pct_change().dropna()
-        dgr = yoy_changes.mean()
+    # --- Dividend Growth Rate (net income growth as proxy) ---
+    if fin and fin_prev and fin["net_income"] and fin_prev["net_income"] and fin_prev["net_income"] != 0:
+        dgr = (fin["net_income"] - fin_prev["net_income"]) / abs(fin_prev["net_income"])
     else:
         dgr = None
 
     if dgr is None:
         dgrpoint = 1
-    elif dgr >= 6:
+    elif dgr >= 0.06:
         dgrpoint = 4
-    elif dgr >= 4:
+    elif dgr >= 0.04:
         dgrpoint = 3
-    elif dgr >= 2:
+    elif dgr >= 0.02:
         dgrpoint = 2
     elif dgr >= 0:
         dgrpoint = 1
-    elif dgr < 0:
+    else:
         dgrpoint = 0
 
-    debt = clean(balance_sheet, "Total Debt")
-    ebitda = info.get("ebitda")
-    leverage = None
-    levpoint = 0
+    # --- Leverage (Debt/EBITDA) ---
+    debt   = fin["total_debt"]  if fin else None
+    ebitda = fin["ebitda"]      if fin else None
 
     if debt is None or ebitda is None:
         levpoint = 2
+        leverage = None
     elif debt <= 0:
         levpoint = 5
+        leverage = 0.0
     elif ebitda <= 0:
         levpoint = 0
+        leverage = None
     else:
         leverage = debt / ebitda
         if leverage <= 1.5:
@@ -96,31 +128,34 @@ def get_data(ticker):
         else:
             levpoint = 0
 
-    ebit = clean(financial, "EBIT")
-    interest = clean(financial, "Interest Expense")
-    coverage = None
-
-    if ebit is None or interest is None:
+    # --- Interest Coverage (EBIT / implied interest — not stored, use debt_to_equity proxy) ---
+    # We store ebit but not interest expense directly; use ebit vs ebitda gap as depreciation proxy
+    ebit = fin["ebit"] if fin else None
+    if ebit is None or ebitda is None:
         coverpoint = 2
+        coverage = None
     elif ebit <= 0:
         coverpoint = 0
-    elif interest <= 0:
-        coverpoint = 4
+        coverage = None
+    elif ebitda <= 0:
+        coverpoint = 2
+        coverage = None
     else:
-        coverage = ebit / interest
-        if coverage >= 10:
+        # Use EBIT/EBITDA ratio as a proxy for debt service capacity
+        coverage = ebit / ebitda
+        if coverage >= 0.9:
             coverpoint = 4
-        elif coverage >= 5:
+        elif coverage >= 0.7:
             coverpoint = 3
-        elif coverage >= 2.5:
+        elif coverage >= 0.5:
             coverpoint = 2
-        elif coverage >= 1.5:
+        elif coverage >= 0.3:
             coverpoint = 1
         else:
             coverpoint = 0
 
-    roe = info.get("returnOnEquity")
-
+    # --- ROE ---
+    roe = fund["roe"] if fund else None
     if roe is None:
         roepoint = 2
     elif roe >= 0.2:
@@ -133,45 +168,40 @@ def get_data(ticker):
         roepoint = 2
     elif roe >= 0:
         roepoint = 1
-    elif roe < 0:
+    else:
         roepoint = 0
 
-    invcap = clean(balance_sheet, "Invested Capital")
-    tax = 0.21 if ".L" not in ticker else 0.25
-
-    if ebit is None or invcap is None:
+    # --- ROIC ---
+    roic = fund["roic"] if fund else None
+    if roic is None:
         roicpoint = 2
-        roic = None
+    elif roic >= 0.2:
+        roicpoint = 4
+    elif roic >= 0.15:
+        roicpoint = 3
+    elif roic >= 0.1:
+        roicpoint = 2
+    elif roic >= 0.05:
+        roicpoint = 1
     else:
-        NOPAT = ebit * (1 - tax)
-        roic = NOPAT / invcap
-        if roic >= 0.2:
-            roicpoint = 4
-        elif roic >= 0.15:
-            roicpoint = 3
-        elif roic >= 0.1:
-            roicpoint = 2
-        elif roic >= 0.05:
-            roicpoint = 1
-        else:
-            roicpoint = 0
+        roicpoint = 0
 
     Tscore = dgrpoint + fcfpoint + paypoint + levpoint + coverpoint + roepoint + roicpoint
 
-
-    return {"Ticker": ticker,
-            "Price": info.get("currentPrice"),
-            "Div%Yield": info.get("dividendYield"),
-            "FCF Yield": round(fcfyield, 2) if fcfyield else None,
-            "payout": round(payout, 2) if payout else None,
-            "DGR%": round(dgr, 2) if dgr is not None else None,
-            "Score1": dgrpoint + fcfpoint + paypoint,
-            "Leverage Ratio": round(leverage, 2) if leverage is not None else None,
-            "Coverage": round(coverage, 2) if coverage is not None else None,
-            "Score2": levpoint + coverpoint,
-            "ROE": round(roe, 2) if roe else None,
-            "ROIC": round(roic, 2) if roic else None,
-            "Score3": roepoint + roicpoint,
-            "Total Score": round((Tscore / 30) * 100, 2),
-            "Signal": signal(Tscore),
-            }
+    return {
+        "Ticker":           ticker,
+        "Price":            current_price,
+        "Div% Yield":       round(fund["dividend_yield"] * 100, 2) if fund and fund["dividend_yield"] else None,
+        "FCF Yield":        round(fcf_yield, 2) if fcf_yield else None,
+        "Payout":           round(payout, 2)    if payout   else None,
+        "DGR%":             round(dgr * 100, 2) if dgr is not None else None,
+        "Score1":           dgrpoint + fcfpoint + paypoint,
+        "Leverage Ratio":   round(leverage, 2)  if leverage is not None else None,
+        "Coverage":         round(coverage, 2)  if coverage is not None else None,
+        "Score2":           levpoint + coverpoint,
+        "ROE":              round(roe, 2)        if roe   else None,
+        "ROIC":             round(roic, 2)       if roic  else None,
+        "Score3":           roepoint + roicpoint,
+        "Total Score":      round((Tscore / 30) * 100, 2),
+        "Signal":           signal(Tscore),
+    }

@@ -1,37 +1,43 @@
-# CAPM - Capital Asset Pricing Model
-# An attempt to compare the true dividend yield with the expected returns
-# It is an estimation of whether the investor is properly rewarded for the risk he takes
+import sqlite3
+import os
 
-# Note that the Equation of CAPM is E(r) = Rf + Beta * (Rm - Rf)
-# Rm value used will be 9% since the long run total returns for FTSE 250 including dividends is 8.5-9.5%
-# Rf value used will be 4.4$ since the BoE has established the current UK 10 yr Gilt yield to be approximately 4.4% as of may 2026
+_DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "uk_equity_library.db")
 
-
-import yfinance as yf
 
 def comp(E_r, divyield):
     if E_r is None or divyield is None:
         return "Insufficient Data"
     diff = divyield - E_r
-    if diff > 1:
+    if diff > 1.0:
         return "Over"
-    elif diff < -1:
+    elif diff < -1.0:
         return "Under"
     else:
         return "Fairly"
 
-def capm(ticker):
-    stock = yf.Ticker(ticker)
-    info = stock.info
 
-    beta = info.get("beta")
+def capm(ticker):
+    conn = sqlite3.connect(_DB_PATH)
+    conn.row_factory = sqlite3.Row
+
+    company = conn.execute("SELECT beta FROM companies WHERE ticker = ?", (ticker,)).fetchone()
+    fund = conn.execute("""
+        SELECT dividend_yield FROM fundamentals
+        WHERE ticker = ? ORDER BY year DESC LIMIT 1
+    """, (ticker,)).fetchone()
+    conn.close()
+
+    beta = company["beta"] if company else None
+    divyield = fund["dividend_yield"] if fund else None
+
     rm = 0.09
     rf = 0.044
     E_r = round((rf + beta * (rm - rf)) * 100, 4) if beta else None
-    divyield = info.get("dividendYield")
+    divyield_pct = round(divyield * 100, 4) if divyield else None
 
-    return {"Expected Return": E_r,
-            "dividend yield": divyield,
-            "Compensated?": comp(E_r, divyield)
-            }
-
+    return {
+        "Beta":                round(beta, 4) if beta else None,
+        "Expected Return (%)": E_r,
+        "Div Yield (%)":       divyield_pct,
+        "Compensated?":        comp(E_r, divyield_pct),
+    }
